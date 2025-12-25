@@ -6,7 +6,7 @@ import plotly.utils
 
 # --- Configuration ---
 # Define paths relative to the project root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.getcwd()
 UPLOADED_DATA_FILE = os.path.join(BASE_DIR, "data", "uploaded_data.csv")
 DEFAULT_DATA_FILE = os.path.join(BASE_DIR, "data", "Amazon Sale Report.csv")
 PLOT_FILE = os.path.join(BASE_DIR, "data", "latest_plot.json")
@@ -35,7 +35,6 @@ def create_sales_chart(group_by: str, metric: str = "Amount") -> str:
         # 2. Handle Case-Insensitive Column Matching
         # Create a map of {lowercase_name: Actual_Name}
         col_map = {c.lower(): c for c in df.columns}
-
         group_col = col_map.get(group_by.lower())
         metric_col = col_map.get(metric.lower())
 

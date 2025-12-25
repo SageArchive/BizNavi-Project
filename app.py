@@ -2,27 +2,22 @@ import streamlit as st
 import pandas as pd
 import os
 import json
+import plotly.io as pio
+import re
 from prophet import Prophet
 from prophet.plot import plot_plotly
-import plotly.io as pio
-import plotly.graph_objs as go
 from dotenv import load_dotenv
 
-# API Key Setup
+# --- API Key Setup ---
 load_dotenv()
 
-# Import our custom orchestrator
 from src.agents.orchestration import get_orchestrator_agent
 
-# Page Configuration
-st.set_page_config(
-    page_title="BizNavi Dashboard",
-    page_icon="🧭",
-    layout="wide"
-)
+# --- App Configuration ---
+st.set_page_config(page_title="BizNavi Dashboard", page_icon="🧭", layout="wide")
 
-# Paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# [CRITICAL] Standardize paths based on current working directory (os.getcwd)
+BASE_DIR = os.getcwd()
 DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -30,122 +25,145 @@ UPLOADED_DATA_FILE = os.path.join(DATA_DIR, "uploaded_data.csv")
 DEFAULT_DATA_FILE = os.path.join(DATA_DIR, "Amazon Sale Report.csv")
 PLOT_FILE = os.path.join(DATA_DIR, "latest_plot.json")
 
+
 # --- Helper: Data Loader ---
 @st.cache_data
 def load_data():
+    """Loads sales data from uploaded file or default file."""
     if os.path.exists(UPLOADED_DATA_FILE):
-        df = pd.read_csv(UPLOADED_DATA_FILE, low_memory=False)
-        source = "Uploaded Data"
+        return pd.read_csv(UPLOADED_DATA_FILE, low_memory=False), "Uploaded Data"
     elif os.path.exists(DEFAULT_DATA_FILE):
-        df = pd.read_csv(DEFAULT_DATA_FILE, low_memory=False)
-        source = "Default Data"
-    else:
-        return pd.DataFrame(), "No Data"
-
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    return df, source
+        return pd.read_csv(DEFAULT_DATA_FILE, low_memory=False), "Default Data"
+    return pd.DataFrame(), "No Data Available"
 
 
-# --- [Sidebar] Settings & Status ---
+# ==========================================
+# SIDEBAR: Settings & Upload
+# ==========================================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/814/814254.png", width=80)
     st.title("BizNavi")
-    st.caption("Your E-Commerce Assistant 🧭")
+    st.caption("AI Operations Assistant 🧭")
 
     st.markdown("### 📂 Data Source")
-    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+    uploaded_file = st.file_uploader("Upload Monthly Sales CSV", type=["csv"])
 
-    if uploaded_file is not None:
+    if uploaded_file:
+        # Save uploaded file
         with open(UPLOADED_DATA_FILE, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        st.success("✅ New Data Uploaded!")
-        st.cache_resource.clear()
+        st.success("✅ Uploaded Successfully!")
+        # Clear cache to reload new data
         st.cache_data.clear()
         st.rerun()
 
-    # Current data in use
-    _, data_source = load_data()
-    st.caption(f"Using: {data_source}")
+    # Show current data source
+    _, src = load_data()
+    st.info(f"Using: {src}")
 
     st.markdown("---")
     if st.button("🗑️ Clear Chat History"):
         st.session_state.messages = []
+        # Remove old plot file
         if os.path.exists(PLOT_FILE):
             os.remove(PLOT_FILE)
         st.rerun()
 
-# --- Tabs ---
-tab1, tab2 = st.tabs(["💬 AI Assistant (Chat)", "📈 Sales Forecast (Dashboard)"])
+# --- Main Tabs ---
+tab1, tab2 = st.tabs(["💬 Chat Assistant", "📈 Forecasting Dashboard"])
 
 # ==========================================
-# TAB 1: AI Chat Interface
+# TAB 1: Chat Interface
 # ==========================================
 with tab1:
     st.header("🧭 Operations Copilot")
 
-    # Initialize Session State for Chat History
+    # Initialize Session State
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Load Agent (Cached for performance)
+
+    # Load Agent (Cached)
     @st.cache_resource
     def load_agent():
-        # This function calls the orchestrator which needs the API key
         return get_orchestrator_agent()
 
+
     try:
-        agent_executor = load_agent()
-    except:
-        st.error("API Key Error")
+        agent = load_agent()
+    except Exception as e:
+        st.error("❌ Error loading agent. Please check your API Key.")
         st.stop()
 
-    # Display Chat History
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-            if "chart_data" in message:
+    # 1. Display Chat History
+    for i, msg in enumerate(st.session_state.messages):
+        with st.chat_message(msg["role"]):
+            content = msg["content"]
+            if isinstance(content, dict): content = str(content)
+            st.markdown(content)
+
+            if "chart_data" in msg:
                 try:
-                    fig = pio.from_json(message["chart_data"])
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(pio.from_json(msg["chart_data"]), use_container_width=True, key=f"chart_{i}")
                 except:
                     pass
 
-    # Handle User Input
-    if prompt := st.chat_input("Type your question here... (e.g., Total revenue for Kurta in April? or Visualize sales by Category)"):
-        # 1. Display User Message
+    # 2. Handle User Input
+    if prompt := st.chat_input("Ask about sales, policies, or visualize data (e.g., 'Visualize sales by Category')"):
+        # (A) Display User Message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # 2. Generate AI Response
+        # (B) Generate Assistant Response
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            with st.spinner("Analyzing data and retrieving policies..."):
+            placeholder = st.empty()
+            with st.spinner("Analyzing data & Thinking..."):
                 try:
-                    if os.path.exists(PLOT_FILE): os.remove(PLOT_FILE)
+                    # Remove old plot file before starting
+                    if os.path.exists(PLOT_FILE):
+                        os.remove(PLOT_FILE)
 
-                    response = agent_executor.invoke({"input": prompt})
-                    full_response = response["output"]
+                    # Invoke Agent
+                    response = agent.invoke({"input": prompt})
 
+                    # Handle Dict vs String output
+                    raw_output = response.get("output", "No response")
+                    if isinstance(raw_output, dict):
+                        resp = json.dumps(raw_output, ensure_ascii=False)
+                    else:
+                        resp = str(raw_output)
+
+                    # Remove hallucinated image tags (e.g., ![image](...))
+                    resp = re.sub(r'!\[[^\]]*\]\([^\)]*\)', '', resp)
+
+                    # Detect Chart Generation Signal
                     chart_json = None
-                    if "CHART_GENERATED" in full_response:
-                        full_response = full_response.replace("CHART_GENERATED", "📊 Visualization:")
-                        if os.path.exists(PLOT_FILE):
-                            with open(PLOT_FILE, "r") as f: chart_json = f.read()
 
-                    message_placeholder.markdown(full_response)
+                    # Read the generated JSON file
+                    if os.path.exists(PLOT_FILE):
+                        with open(PLOT_FILE, "r") as f:
+                            chart_json = f.read()
+                        resp += "\n\n📊 **Visualization Generated:**"
+
+
+                    # Display Text Response
+                    placeholder.markdown(resp)
+
+                    # Display Chart (Immediate Render)
                     if chart_json:
-                        fig = pio.from_json(chart_json)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(pio.from_json(chart_json), use_container_width=True)
 
                 except Exception as e:
-                    full_response = f"Error: {e}"
-                    message_placeholder.error(full_response)
+                    resp = f"❌ An error occurred: {str(e)}"
+                    placeholder.error(resp)
                     chart_json = None
 
-        # 3. Save Assistant Response
-        msg_data = {"role": "assistant", "content": full_response}
-        if chart_json: msg_data["chart_data"] = chart_json
+        # (C) Save & Rerun (Fixes Layout)
+        msg_data = {"role": "assistant", "content": resp}
+        if chart_json:
+            msg_data["chart_data"] = chart_json
+
         st.session_state.messages.append(msg_data)
         st.rerun()
 
@@ -153,51 +171,53 @@ with tab1:
 # TAB 2: Forecasting Dashboard
 # ==========================================
 with tab2:
-    st.header("📈 Sales Forecasting")
-    st.write("Select a category to predict future sales for the next 30 days using the Prophet model.")
+    st.header("📈 Demand Forecasting Radar")
+    st.write("Predict future sales trends using the Prophet AI model.")
 
-    # Load Data for Visualization
     df, _ = load_data()
 
     if df.empty:
-        st.warning("No data available.")
+        st.warning("⚠️ No data available for forecasting.")
     else:
-        categories = df['Category'].dropna().unique()
-        selected_category = st.selectbox("Select Category:", categories)
+        # Preprocessing
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-        if st.button("🚀 Run Forecast Model"):
-            with st.spinner(f"Training model for '{selected_category}'..."):
-                # Data Preprocessing for Prophet
-                target_df = df[df['Category'] == selected_category].copy()
+        # UI Controls
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            categories = df['Category'].dropna().unique()
+            selected_cat = st.selectbox("Select Category:", categories)
+            run_btn = st.button("🚀 Run Forecast")
 
-                # Group by Date (Daily Sum of Qty)
+        # Run Model
+        if run_btn:
+            with st.spinner(f"Training model for '{selected_cat}'..."):
+                # Prepare data for Prophet
+                target_df = df[df['Category'] == selected_cat].copy()
                 daily_sales = target_df.groupby('Date')['Qty'].sum().reset_index()
                 daily_sales.columns = ['ds', 'y']
 
                 if len(daily_sales) < 5:
-                    st.error("Not enough data points to forecast this category.")
+                    st.error("❌ Not enough historical data to forecast this category.")
                 else:
-                    # Prophet Modeling
-                    m = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=False)
-                    m.fit(daily_sales)
-                    future = m.make_future_dataframe(periods=30)
-                    forecast = m.predict(future)
+                    try:
+                        # Fit Model
+                        m = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=False)
+                        m.fit(daily_sales)
 
-                    # 1. Plotly Interactive Chart
-                    st.subheader(f"📈 30-Day Sales Forecast for {selected_category}")
-                    fig = plot_plotly(m, forecast)
-                    st.plotly_chart(fig, use_container_width=True)
+                        # Predict
+                        future = m.make_future_dataframe(periods=30)
+                        forecast = m.predict(future)
 
-                    # 2. Key Metrics
-                    future_30 = forecast.tail(30)
-                    total_pred = future_30['yhat'].sum()
-                    avg_daily = future_30['yhat'].mean()
+                        # Visuals
+                        st.subheader(f"30-Day Forecast: {selected_cat}")
+                        fig = plot_plotly(m, forecast)
+                        st.plotly_chart(fig, use_container_width=True)
 
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Total Predicted Sales (30d)", f"{int(total_pred)} units")
-                    col2.metric("Avg Daily Sales", f"{avg_daily:.1f} units/day")
-                    col3.metric("Training Data Points", f"{len(daily_sales)} days")
+                        # Metrics
+                        future_30 = forecast.tail(30)
+                        total_pred = int(future_30['yhat'].sum())
+                        st.success(f"🤖 Predicted Total Sales (Next 30 Days): **{total_pred} units**")
 
-                    # Show Raw Data
-                    with st.expander("View Detailed Forecast Data"):
-                        st.dataframe(future_30[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].head())
+                    except Exception as e:
+                        st.error(f"Modeling Error: {e}")
