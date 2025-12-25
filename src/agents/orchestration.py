@@ -7,7 +7,7 @@ from langchain.tools import tool
 from src.agents.analytics_agent import analyze_sales_data
 from src.rag.retriever import query_warehouse_policy
 from src.tools.forecasting import forecast_demand
-
+from src.tools.visualization import create_sales_chart
 
 # 1. Define Tools (Decorators make them compatible with LangChain)
 @tool
@@ -29,7 +29,15 @@ def forecasting_tool(category: str):
     """
     return forecast_demand(category)
 
-tools = [sales_tool, policy_tool, forecasting_tool]
+@tool
+def visualization_tool(query: str):
+    """
+    Useful when the user asks to 'visualize', 'plot', 'draw a chart', or 'show graph'.
+    Input string should be the column to group by (e.g., 'Category', 'Status', 'Size').
+    """
+    return create_sales_chart(query)
+
+tools = [sales_tool, policy_tool, forecasting_tool, visualization_tool]
 
 
 # 2. Setup the Main Orchestrator Agent

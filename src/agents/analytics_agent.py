@@ -5,14 +5,26 @@ from langchain_openai import ChatOpenAI
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_FILE = os.path.join(BASE_DIR, "data", "Amazon Sale Report.csv")
+DEFAULT_DATA_FILE = os.path.join(BASE_DIR, "data", "Amazon Sale Report.csv")
+UPLOADED_DATA_FILE = os.path.join(BASE_DIR, "data", "uploaded_data.csv")
 
 def get_sales_data():
     """Loads and preprocesses the data."""
     print("Loading Sales Data...")
     try:
-        df = pd.read_csv(DATA_FILE, low_memory=False)
+        # Check if uploaded data exists
+        if os.path.exists(UPLOADED_DATA_FILE):
+            print(f"📂 Loading UPLOADED data from: {UPLOADED_DATA_FILE}")
+            df = pd.read_csv(UPLOADED_DATA_FILE, low_memory=False)
+        elif os.path.exists(DEFAULT_DATA_FILE):
+            print(f"📂 Loading DEFAULT data from: {DEFAULT_DATA_FILE}")
+            df = pd.read_csv(DEFAULT_DATA_FILE, low_memory=False)
+        else:
+            print("❌ No data file found.")
+            return pd.DataFrame()
+
         # Preprocessing
+        df.drop_duplicates(['Order ID', 'ASIN'], inplace=True, ignore_index=True)
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
         df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce').fillna(0)
         # Ensure Status is string for easier filtering
