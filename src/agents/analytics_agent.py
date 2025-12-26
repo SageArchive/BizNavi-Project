@@ -25,7 +25,7 @@ def get_sales_data():
 
         # Preprocessing
         df.drop_duplicates(['Order ID', 'ASIN'], inplace=True, ignore_index=True)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], format='%m-%d-%y', errors='coerce')
         df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce').fillna(0)
         # Ensure Status is string for easier filtering
         df['Status'] = df['Status'].astype(str)

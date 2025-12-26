@@ -7,7 +7,7 @@ load_dotenv()
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 
 # Paths
@@ -49,7 +49,7 @@ def build_vector_db():
 
     # Embedding & Storage
     print("Embedding and saving to ChromaDB...")
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
     # Create and persist the vector store
     Chroma.from_documents(docs, embeddings, persist_directory=PERSIST_DIR)

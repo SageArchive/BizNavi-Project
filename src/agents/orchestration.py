@@ -1,6 +1,6 @@
 from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain.tools import tool
 
 # Import our custom logic
@@ -42,7 +42,10 @@ tools = [sales_tool, policy_tool, forecasting_tool, visualization_tool]
 
 # 2. Setup the Main Orchestrator Agent
 def get_orchestrator_agent():
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOllama(
+        model="llama3.1",
+        temperature=0
+    )
 
     prompt = ChatPromptTemplate.from_messages([
         ("system",

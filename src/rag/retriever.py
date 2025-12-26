@@ -1,5 +1,5 @@
 import os
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 
 # Paths
@@ -15,7 +15,7 @@ def query_warehouse_policy(query_text: str) -> str:
     if not os.path.exists(PERSIST_DIR):
         return "Error: Vector DB not found. Please run vector_store.py first."
 
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
     db = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
 
     # Retrieve top 3 chunks

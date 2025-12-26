@@ -180,7 +180,7 @@ with tab2:
         st.warning("⚠️ No data available for forecasting.")
     else:
         # Preprocessing
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], format='%m-%d-%y', errors='coerce')
 
         # UI Controls
         col1, col2 = st.columns([1, 3])

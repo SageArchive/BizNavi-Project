@@ -1,0 +1,44 @@
+ECO-Ops-Platform/
+│
+├── data/                        # [Source] CSV Data Files
+│   ├── Amazon Sale Report.csv
+│   ├── Cloud Warehouse Compersion Chart.csv
+│   └── ... (other csv files)
+│
+├── src/                         # [Source Code]
+│   ├── agents/                  # Agent Definitions
+│   │   ├── analytics_agent.py   # Pandas/SQL Agent logic
+│   │   └── orchestration.py     # Main LangGraph/LangChain Router
+│   │
+│   ├── rag/                     # RAG & Vector DB Logic
+│   │   ├── vector_store.py      # ChromaDB Setup & Ingestion
+│   │   └── retriever.py         # Retrieval Logic
+│   │
+│   └── tools/                   # Custom Tools
+│       ├── forecasting.py       # ML Prediction Tools
+│       └── utils.py             # Helper functions
+│
+├── chroma_db/                   # [Storage] Local Vector DB Persistence
+├── .env                         # API Keys (OpenAI, etc.)
+├── main.py                      # Entry Point (FastAPI or CLI)
+└── requirements.txt             # Dependencies
+
+
+🧪 추천 테스트 질문 (영어)
+에이전트가 영어 프롬프트를 사용하므로, 영어로 질문했을 때 가장 정확하게 작동합니다.
+
+카테고리별 매출 (가장 기본)
+
+"Visualize total sales by Category" (카테고리별 총 매출을 시각화해 줘)
+
+주문 상태별 현황
+
+"Show me a bar chart of Status" (주문 상태별로 막대 그래프 보여줘)
+
+사이즈별 판매량
+
+"Plot the quantity by Size" (사이즈별로 판매 수량을 그려줘)
+
+배송 도시별 매출 (Top 10)
+
+"Graph revenue by Ship-City" (배송 도시별 매출을 그래프로 보여줘)
