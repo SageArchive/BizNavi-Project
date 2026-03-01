@@ -35,11 +35,17 @@ def create_sales_chart(group_by: str, metric: str = "Amount") -> str:
         # 2. Handle Case-Insensitive Column Matching
         # Create a map of {lowercase_name: Actual_Name}
         col_map = {c.lower(): c for c in df.columns}
-        group_col = col_map.get(group_by.lower())
-        metric_col = col_map.get(metric.lower())
+        group_col = None
+        group_by_lower = group_by.lower()
+        for col_lower, col_actual in col_map.items():
+            if col_lower in group_by_lower:
+                group_col = col_actual
+                break
+
+        metric_col = col_map.get(metric.lower(), "Amount")
 
         if not group_col or not metric_col:
-            return f"Error: Columns '{group_by}' or '{metric}' not found in the dataset."
+            return f"Error: Could not find matching columns for '{group_by}' or '{metric}' in the dataset."
 
         # 3. Aggregate Data
         # Group by the target column and sum the metric

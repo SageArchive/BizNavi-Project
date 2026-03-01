@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,7 +45,7 @@ def analyze_sales_data(query: str) -> str:
     if df.empty:
         return "Error: Sales data is not loaded."
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOllama(model="llama3.1", temperature=0)
 
     prefix_instructions = """
         You are a Python Data Analyst working with a pandas DataFrame named `df`.
@@ -66,7 +66,7 @@ def analyze_sales_data(query: str) -> str:
         df,
         verbose=True,
         allow_dangerous_code=True,
-        agent_type="openai-tools",
+        agent_type="tool-calling",
         agent_executor_kwargs={"handle_parsing_errors": True},
         prefix=prefix_instructions,
     )
