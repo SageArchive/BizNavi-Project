@@ -67,7 +67,7 @@ graph TD
 
 Check out the live demo on the web!
 
-👉 **[Launch Live Demo (Streamlit Cloud)](https://biznavi-project-ollama.streamlit.app/)**
+👉 **[Launch Live Demo (Streamlit Cloud)](https://biznavi-project.streamlit.app/)**
 
 *(Or see it in action below)*
 
