@@ -38,29 +38,27 @@ graph TD
 
 ---
 
+## 🚀 Key Features
+
+### **💬 Operations Copilot (Chat Assistant)**: 
+* An intelligent chat interface powered by LangChain and Llama 3.1. 
+* **Sales Analysis**: Analyzes past quantitative data (revenue, orders, categories) from the Amazon Sale Report.
+* **Data Visualization**: Generates dynamic Plotly charts based on user prompts (e.g., "Visualize sales by Category").
+* **Policy Querying (RAG)**: Uses Retrieval-Augmented Generation to instantly find and answer queries about warehouse rules, KPIs, pricing, and SOPs from the vector database.
+### **📈 Demand Forecasting Radar**: 
+* Utilizes the Prophet AI model to predict future sales trends.
+* Generates 30-day demand forecasts for selected product categories based on historical daily sales.
+### **🗄️ Local AI & Vector Database**: 
+* Runs entirely on local LLMs using Ollama (Llama 3.1 for text, Nomic for embeddings).
+* Uses ChromaDB for efficient document retrieval and similarity search.
+
 ## 🛠️ Tech Stack
 
-### **AI Orchestration & LLM Framework**
-
-* **LangChain**: The backbone framework for building the agentic workflow, managing tool execution, and handling LLM interactions.
-* **Ollama**: Local LLM runner used to host and serve the **Llama 3.1** model for privacy-focused, offline inference.
-* **OpenAI API** (Optional): Supported as an alternative cloud-based LLM provider.
-
-### **RAG (Retrieval-Augmented Generation)**
-
-* **ChromaDB**: An open-source embedding database used to store and retrieve vector embeddings of warehouse policy documents.
-* 🤗 **Hugging Face Transformers**: Utilized via `sentence-transformers` to generate semantic embeddings for the RAG system.
-
-### **Data Analytics & Forecasting**
-
-* **Pandas**: Used for high-performance data manipulation, cleaning, and structured analysis of sales CSV reports.
-* **Prophet**: A forecasting procedure implemented to predict future sales trends based on historical time-series data.
-* **NumPy**: Fundamental package for numerical computing.
-
-### **Frontend & Visualization**
-
-* **Streamlit**: Builds the interactive web-based dashboard and chat interface.
-* **Plotly**: Generates interactive and dynamic charts (bar, line, scatter) for data visualization.
+* **Frontend & UI**: Streamlit, Plotly
+* **AI & Orchestration**: LangChain, Ollama (`llama3.1`)
+* **Vector Store & Embeddings**: ChromaDB, OllamaEmbeddings (`nomic-embed-text`)
+* **Forecasting**: Facebook Prophet
+* **Data Manipulation**: Pandas
 
 
 ---
@@ -139,20 +137,21 @@ streamlit run app.py
 ## 📂 Project Structure
 
 ```bash
-ECO-Ops-Platform/
-├── data/                        # CSV Data Files (Sales, Reports)
+BizNavi-Project/
+├── data/                        # CSV data files (sales, reports)
 ├── src/
-│   ├── agents/                  # LangChain Agent Logic
-│   │   ├── analytics_agent.py   # Data Analysis Logic
-│   │   └── orchestration.py     # Main Router Agent
-│   ├── rag/                     # RAG System
-│   │   ├── vector_store.py      # ChromaDB Ingestion
-│   │   └── retriever.py         # Retrieval Logic
-│   └── tools/                   # Custom Tools (Forecasting, Viz)
-├── chroma_db/                   # Local Vector Database
-├── app.py                       # Streamlit Frontend Entry Point
-├── main.py                      # CLI Entry Point
-└── requirements.txt             # Project Dependencies
+│   ├── agents/
+│   │   ├── analytics_agent.py   # Data analysis logic
+│   │   └── orchestration.py     # Main router agent
+│   ├── rag/
+│   │   ├── vector_store.py      # ChromaDB ingestion
+│   │   └── retriever.py         # Retrieval logic
+│   └── tools/
+│   │   ├── forecasting.py       # Demand forecasting logic
+│   │   └── visualization.py     # Plotly chart generation logic
+├── chroma_db/                   # Chroma vector database storage
+├── app.py                       # Main Streamlit application file
+└── requirements.txt             # Project dependencies
 
 ```
 
